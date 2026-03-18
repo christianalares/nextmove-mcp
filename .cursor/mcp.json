@@ -1,8 +1,3 @@
 {
-  "mcpServers": {
-    "nextmove": {
-      "command": "npx",
-      "args": ["tsx", "/Users/krille/dev/eget/nextmove/src/index.ts"]
-    }
-  }
+  "mcpServers": {}
 }
