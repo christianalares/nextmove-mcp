@@ -1,6 +1,6 @@
 {
   "name": "nextmove-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server that analyzes your repo and surfaces the highest-value agent task to work on next.",
   "type": "module",
   "bin": {

@@ -189,6 +189,7 @@ function formatInstructions(ctx: NextMoveContext): string {
     (ctx.git?.uncommitted.count ?? 0) > 0
   const recentReleaseDays = ctx.github?.recentRelease?.ageDays ?? null
   const isPostRelease = recentReleaseDays !== null && recentReleaseDays <= 14
+  const isNewProject = ctx.scan.missing.length >= 3
 
   const hints: string[] = []
 
@@ -209,27 +210,43 @@ function formatInstructions(ctx: NextMoveContext): string {
   }
   if (isPostRelease) {
     hints.push(
-      `A release landed ${recentReleaseDays} days ago — stabilization tasks may have higher value than new features right now.`,
+      `A release landed ${recentReleaseDays} days ago — prefer stabilization and polish over new features.`,
     )
   }
   if (hasUncommitted) {
     hints.push(
-      "You have uncommitted work and open PRs — consider whether to ship what's in progress before starting something new.",
+      "You have uncommitted work and open PRs — consider shipping what's in progress before starting something new.",
     )
   }
 
   const lines = [
     `## Instructions for Cursor`,
-    `Based on the signals above, suggest **2-3 ready-to-run Cursor agent tasks**.`,
+    `You are a staff engineer helping a developer decide what to work on next.`,
+    `Based on all signals above, suggest **2-3 agent tasks** ranked by impact.`,
     ``,
-    `For each task:`,
-    `- Give it a short title and a "why now" in one sentence citing the signals above`,
-    `- Provide a scoped agent prompt the user can paste directly into Cursor agent`,
-    `- The prompt must include: goal, files to touch, files NOT to touch, and a clear acceptance criterion`,
-    `- Estimate effort as XS / S / M / L`,
+    `**Each task must use this exact format:**`,
     ``,
-    `Rank by: fixing blockers for teammates > broken CI > sprint/assigned work > new features.`,
-    `Prefer reversible, small-surface changes. Bias toward things worth building, not just chores.`,
+    `**Task N: [Short title]** · Effort: [XS / S / M / L]`,
+    `> Why now: [One sentence referencing a specific signal from the context above]`,
+    `>`,
+    `> Agent prompt:`,
+    `> [A complete, paste-ready prompt for Cursor agent. Must include:]`,
+    `> - Goal: what to build or fix`,
+    `> - Scope: which files to touch`,
+    `> - Constraints: what NOT to change (public APIs, unrelated files, etc.)`,
+    `> - Done when: one specific, verifiable acceptance criterion`,
+    ``,
+    `**Ranking rules (apply in order):**`,
+    `1. Unblock teammates — pending review requests first`,
+    `2. Broken CI — fix before starting anything new`,
+    `3. Assigned or sprint work — honor existing commitments`,
+    `4. New features — bias toward things that are interesting to build, not just chores`,
+    ``,
+    isNewProject
+      ? `This project has multiple missing setup signals — prioritize foundational tasks (git, CI, tests) before features.`
+      : `This is an established project — prefer small, high-leverage changes over large rewrites.`,
+    ``,
+    `Keep each agent prompt under 80 words. Specific beats comprehensive.`,
   ]
 
   if (hints.length > 0) {
