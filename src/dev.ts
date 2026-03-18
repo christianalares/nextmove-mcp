@@ -1,14 +1,14 @@
 /**
- * Dev test runner — use this to iterate without restarting Cursor.
- * Run: npm test
- * Point at any local repo with: REPO=/path/to/repo npm test
+ * Dev runner — use this to iterate without restarting Cursor.
+ * Run: pnpm dev
+ * Point at any local repo with: REPO=/path/to/repo pnpm dev
  */
 
 import { formatContext } from "./format.js"
 import { getGitHubSignals, resolveGitHubToken } from "./github.js"
 import { getGitPulse } from "./pulse.js"
 import { scanProject } from "./scan.js"
-import type { NextMoveContext } from "./types.js"
+import type { GitHubSkipReason, NextMoveContext } from "./types.js"
 
 const repoPath = process.env.REPO ?? process.cwd()
 const token = resolveGitHubToken()
@@ -19,15 +19,23 @@ console.error(
 )
 console.error("---\n")
 
-const [git, github, scan] = await Promise.all([
+const githubPromise = token
+  ? getGitHubSignals(repoPath, token)
+  : Promise.resolve({
+      signals: null,
+      skipReason: "no-token" as GitHubSkipReason,
+    })
+
+const [git, githubResult, scan] = await Promise.all([
   getGitPulse(repoPath),
-  token ? getGitHubSignals(repoPath, token) : Promise.resolve(null),
+  githubPromise,
   Promise.resolve(scanProject(repoPath)),
 ])
 
 const context: NextMoveContext = {
   git,
-  github,
+  github: githubResult.signals,
+  githubSkipReason: githubResult.skipReason,
   scan,
   collectedAt: new Date().toISOString(),
 }

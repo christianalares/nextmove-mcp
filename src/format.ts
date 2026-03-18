@@ -11,6 +11,8 @@ export function formatContext(ctx: NextMoveContext): string {
 
   if (ctx.github) {
     sections.push(formatGitHubSection(ctx))
+  } else {
+    sections.push(formatGitHubSkipped(ctx))
   }
 
   sections.push(formatInstructions(ctx))
@@ -97,6 +99,20 @@ function formatGitSection(ctx: NextMoveContext): string {
   }
 
   return lines.join("\n")
+}
+
+function formatGitHubSkipped(ctx: NextMoveContext): string {
+  const messages: Record<string, string> = {
+    "no-token":
+      "GitHub signals unavailable — no token found. Install the GitHub CLI (`brew install gh && gh auth login`) or set the `GITHUB_TOKEN` environment variable.",
+    "no-remote":
+      "GitHub signals unavailable — no GitHub remote detected on this repo.",
+    "auth-failed":
+      "GitHub signals unavailable — token was found but authentication failed. Try running `gh auth login` again.",
+  }
+
+  const reason = ctx.githubSkipReason ?? "no-token"
+  return `## GitHub\n${messages[reason]}`
 }
 
 function formatGitHubSection(ctx: NextMoveContext): string {

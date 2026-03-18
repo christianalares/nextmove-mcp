@@ -4,6 +4,7 @@ import { simpleGit } from "simple-git"
 import type {
   CIStatus,
   GitHubSignals,
+  GitHubSkipReason,
   Issue,
   PullRequest,
   Release,
@@ -35,20 +36,24 @@ interface RepoCoords {
   repo: string
 }
 
+export type GitHubResult =
+  | { signals: GitHubSignals; skipReason: null }
+  | { signals: null; skipReason: GitHubSkipReason }
+
 export async function getGitHubSignals(
   cwd: string,
   token: string,
-): Promise<GitHubSignals | null> {
+): Promise<GitHubResult> {
   const coords = await detectRepoCoords(cwd)
   if (!coords) {
-    return null
+    return { signals: null, skipReason: "no-remote" }
   }
 
   const octokit = new Octokit({ auth: token })
 
   const username = await getAuthenticatedUser(octokit)
   if (!username) {
-    return null
+    return { signals: null, skipReason: "auth-failed" }
   }
 
   const branch = await getCurrentBranch(cwd)
@@ -63,13 +68,16 @@ export async function getGitHubSignals(
     ])
 
   return {
-    owner: coords.owner,
-    repo: coords.repo,
-    reviewRequests,
-    openPRs,
-    assignedIssues,
-    ciStatus,
-    recentRelease,
+    signals: {
+      owner: coords.owner,
+      repo: coords.repo,
+      reviewRequests,
+      openPRs,
+      assignedIssues,
+      ciStatus,
+      recentRelease,
+    },
+    skipReason: null,
   }
 }
 

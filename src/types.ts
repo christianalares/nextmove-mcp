@@ -64,9 +64,12 @@ export interface Release {
   ageDays: number
 }
 
+export type GitHubSkipReason = "no-token" | "no-remote" | "auth-failed"
+
 export interface NextMoveContext {
   git: GitPulse | null
   github: GitHubSignals | null
+  githubSkipReason: GitHubSkipReason | null
   scan: import("./scan.js").ProjectScan
   collectedAt: string
 }

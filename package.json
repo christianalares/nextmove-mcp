@@ -1,14 +1,19 @@
 {
-  "name": "nextmove",
+  "name": "nextmove-mcp",
   "version": "0.1.0",
+  "description": "MCP server that analyzes your repo and surfaces the highest-value agent task to work on next.",
   "type": "module",
   "bin": {
-    "nextmove": "./dist/index.js"
+    "nextmove-mcp": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx src/dev.ts",
     "build": "tsc",
+    "prepublishOnly": "pnpm run check-types && pnpm test && pnpm run build",
     "test": "vitest run",
     "test:watch": "vitest",
     "check-types": "tsc --noEmit",
@@ -16,10 +21,20 @@
     "lint:fix": "biome check --write src",
     "format": "biome format --write src"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "mcp",
+    "cursor",
+    "ai",
+    "developer-tools",
+    "github",
+    "productivity"
+  ],
+  "author": "Christian Alares",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christianalares/nextmove-mcp"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@octokit/rest": "^22.0.1",
