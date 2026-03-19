@@ -1,3 +1,5 @@
+<img src="logo.png" alt="Next Move" width="80" />
+
 # nextmove-mcp
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server for Cursor that analyzes your repo and tells you what to work on next — presented as numbered options you can act on immediately.
@@ -19,10 +21,10 @@ Reply with a number and Cursor starts working on it immediately — no copy-past
 
 ## What it looks at
 
-- **Local git** — current branch, uncommitted changes, hottest files (last 30 days), recent commits, TODOs in active files
+- **Local git** — current branch, uncommitted changes, unpushed commits, stale local branches, hottest files (last 30 days), recent commits, TODOs in active files
 - **GitHub** — PRs waiting on your review, your open PRs, CI status on current branch, assigned issues, recent releases
 - **Project setup** — detects stack, package manager, and flags missing CI, tests, linter, formatter
-- **Linear** — if the Linear MCP is connected, in-progress issues are cross-referenced against your current branch and recent commits. Only surfaced if they're clearly relevant to the current codebase.
+- **Linear** — if the Linear MCP is connected in Cursor, in-progress issues are cross-referenced against your current branch and recent commits. Only surfaced if they're clearly relevant to the current codebase.
 
 ## Install
 
@@ -68,7 +70,7 @@ Without a token the tool still works — it skips the GitHub layer and focuses o
 
 ## Linear integration
 
-If the [Linear MCP](https://linear.app) server is connected in Cursor, nextmove automatically checks your in-progress Linear issues and cross-references them against your current branch name and recent commits. If a sprint issue clearly relates to what you're already working on, it's surfaced as a task. If nothing matches the current codebase context, Linear is skipped silently.
+If the Linear MCP server is connected in Cursor (Settings → Tools & MCP → Linear), nextmove automatically checks your in-progress Linear issues and cross-references them against your current branch name and recent commits. If a sprint issue clearly relates to what you're already working on, it's surfaced as a task. If nothing matches the current codebase context, Linear is skipped silently.
 
 No configuration required.
 
