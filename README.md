@@ -1,4 +1,6 @@
-<img src="logo.png" alt="Next Move" width="80" />
+<p align="center">
+  <img src="logo.png" alt="Next Move" width="140" />
+</p>
 
 # nextmove-mcp
 
