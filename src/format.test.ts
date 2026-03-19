@@ -390,4 +390,30 @@ describe("formatContext — instructions section", () => {
     const output = formatContext(makeContext())
     expect(output).toContain("established project")
   })
+
+  it("includes Linear step 1 instructions", () => {
+    const output = formatContext(makeContext())
+    expect(output).toContain("list_cycles")
+    expect(output).toContain("list_issues")
+    expect(output).toContain("get_user")
+  })
+
+  it("tells Cursor to skip Linear silently when not connected", () => {
+    const output = formatContext(makeContext())
+    expect(output).toContain("skip this step silently")
+  })
+
+  it("instructs Cursor to cross-reference sprint issues with branch and commits", () => {
+    const output = formatContext(makeContext())
+    expect(output).toContain("branch name and recent commit messages")
+  })
+
+  it("ranks active sprint issues above assigned GitHub issues", () => {
+    const output = formatContext(makeContext())
+    const sprintRuleIndex = output.indexOf("Active sprint issues")
+    const githubIssueRuleIndex = output.indexOf("Assigned GitHub issues")
+    expect(sprintRuleIndex).toBeGreaterThan(-1)
+    expect(githubIssueRuleIndex).toBeGreaterThan(-1)
+    expect(sprintRuleIndex).toBeLessThan(githubIssueRuleIndex)
+  })
 })
