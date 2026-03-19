@@ -1,14 +1,28 @@
 # nextmove-mcp
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for Cursor that analyzes your repo and surfaces the highest-value agent task to work on next.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for Cursor that analyzes your repo and tells you what to work on next — presented as numbered options you can act on immediately.
 
-Ask **"what's my next move?"** in any Cursor chat and get 2–3 scoped, ready-to-run agent prompts — ranked by impact, backed by real signals from your repo and GitHub.
+Ask **"what's my next move?"** and get back something like:
+
+> **1. Wire up the goals screen with real data** · M
+> `goals/index.tsx` was just added but has no data fetching yet — good moment to finish it while the context is fresh.
+>
+> **2. Fix the failing CI job** · S
+> The `build` job has been failing on this branch for 2 days and is likely blocking a merge.
+>
+> **3. Add tests for the goals API** · S
+> No test files exist yet — the goals logic is a low-risk place to establish the pattern.
+>
+> Just reply with **1**, **2**, or **3** and I'll get started.
+
+Reply with a number and Cursor starts working on it immediately — no copy-pasting prompts.
 
 ## What it looks at
 
 - **Local git** — current branch, uncommitted changes, hottest files (last 30 days), recent commits, TODOs in active files
+- **GitHub** — PRs waiting on your review, your open PRs, CI status on current branch, assigned issues, recent releases
 - **Project setup** — detects stack, package manager, and flags missing CI, tests, linter, formatter
-- **GitHub** — open PRs, review requests waiting on you, CI status on current branch, assigned issues, recent releases
+- **Linear** — if the Linear MCP is connected, in-progress issues are cross-referenced against your current branch and recent commits. Only surfaced if they're clearly relevant to the current codebase.
 
 ## Install
 
@@ -33,9 +47,11 @@ In any Cursor chat:
 
 > what's my next move?
 
-The tool auto-detects your current workspace. If you want to analyze a specific repo:
+The tool auto-detects your current workspace. You can also target a specific repo:
 
 > what's my next move in /path/to/my/project?
+
+Reply with a number and Cursor acts on it immediately — no prompts to copy, no context to re-explain.
 
 ## GitHub integration
 
@@ -48,17 +64,23 @@ gh auth login
 
 Alternatively, set a `GITHUB_TOKEN` environment variable.
 
-Without a token, the tool still works — it just skips the GitHub layer and focuses on local signals.
+Without a token the tool still works — it skips the GitHub layer and focuses on local git and project signals.
 
-## What you get
+## Linear integration
 
-For each suggested task:
+If the [Linear MCP](https://linear.app) server is connected in Cursor, nextmove automatically checks your in-progress Linear issues and cross-references them against your current branch name and recent commits. If a sprint issue clearly relates to what you're already working on, it's surfaced as a task. If nothing matches the current codebase context, Linear is skipped silently.
 
-- A short title and a "why now" grounded in real signals (failing CI, open review requests, recent churn, missing setup)
-- A scoped agent prompt you can paste directly into a Cursor agent run — with goal, files to touch, files to avoid, and a clear acceptance criterion
-- An effort estimate (XS / S / M / L)
+No configuration required.
 
-Tasks are ranked: **unblocking teammates > broken CI > sprint commitments > new features**.
+## Ranking
+
+Tasks are ranked in this order:
+
+1. **Unblock teammates** — pending review requests first
+2. **Broken CI** — fix before starting anything new
+3. **Active sprint work** — in-progress Linear issues that match the current context
+4. **Assigned GitHub issues** — honor existing commitments
+5. **New features** — bias toward things worth building, not just chores
 
 ## Development
 
@@ -68,7 +90,7 @@ cd nextmove-mcp
 pnpm install
 ```
 
-Test against a local repo:
+Preview the output against a local repo:
 
 ```bash
 REPO=/path/to/your/project pnpm dev
@@ -83,5 +105,5 @@ pnpm test
 Test the MCP protocol directly in a browser UI:
 
 ```bash
-npx @modelcontextprotocol/inspector npx tsx src/index.ts
+npx @modelcontextprotocol/inspector tsx src/index.ts
 ```
