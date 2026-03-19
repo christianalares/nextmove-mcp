@@ -68,9 +68,8 @@ server.registerTool(
   {
     description:
       "Gathers real-time signals from your local git repo and GitHub to surface what's worth working on next. " +
-      "Returns structured context about branch state, recent activity, hotspots, open PRs, CI status, and assigned issues. " +
-      "Use this context to suggest 2-3 ready-to-run Cursor agent tasks, ranked by impact. " +
-      "Each suggested task should include a scoped agent prompt the user can paste directly into a Cursor agent run.",
+      "Returns branch state, recent activity, hotspots, open PRs, CI status, and assigned issues, " +
+      "then suggests 2-3 numbered options the user can act on immediately by replying with a number.",
     inputSchema: z.object({
       cwd: z
         .string()

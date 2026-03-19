@@ -6,9 +6,19 @@ export interface GitPulse {
     additions: number
     deletions: number
   }
+  unpushed: {
+    count: number
+    hasRemote: boolean
+  }
+  staleBranches: StaleBranch[]
   recentCommits: CommitSummary[]
   churn: ChurnEntry[]
   todos: TodoEntry[]
+}
+
+export interface StaleBranch {
+  name: string
+  ageDays: number
 }
 
 export interface CommitSummary {

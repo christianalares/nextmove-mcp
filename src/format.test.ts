@@ -77,6 +77,8 @@ describe("formatContext — git section", () => {
           recentCommits: [],
           churn: [],
           todos: [],
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [],
         },
       }),
     )
@@ -97,6 +99,8 @@ describe("formatContext — git section", () => {
           recentCommits: [],
           churn: [],
           todos: [],
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [],
         },
       }),
     )
@@ -113,6 +117,8 @@ describe("formatContext — git section", () => {
           recentCommits: [],
           churn: [],
           todos: [],
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [],
         },
       }),
     )
@@ -128,6 +134,8 @@ describe("formatContext — git section", () => {
           recentCommits: [],
           churn: [{ path: "src/api/handler.ts", count: 12 }],
           todos: [],
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [],
         },
       }),
     )
@@ -151,11 +159,87 @@ describe("formatContext — git section", () => {
               text: "add retry logic",
             },
           ],
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [],
         },
       }),
     )
     expect(output).toContain("src/cache.ts:42")
     expect(output).toContain("add retry logic")
+  })
+
+  it("shows unpushed commit count when ahead of remote", () => {
+    const output = formatContext(
+      makeContext({
+        git: {
+          branch: "main",
+          uncommitted: { count: 0, files: [], additions: 0, deletions: 0 },
+          unpushed: { count: 4, hasRemote: true },
+          staleBranches: [],
+          recentCommits: [],
+          churn: [],
+          todos: [],
+        },
+      }),
+    )
+    expect(output).toContain("4 commits ahead of origin")
+  })
+
+  it("shows never-pushed message when branch has no remote", () => {
+    const output = formatContext(
+      makeContext({
+        git: {
+          branch: "feat/new-thing",
+          uncommitted: { count: 0, files: [], additions: 0, deletions: 0 },
+          unpushed: { count: 0, hasRemote: false },
+          staleBranches: [],
+          recentCommits: [],
+          churn: [],
+          todos: [],
+        },
+      }),
+    )
+    expect(output).toContain("never been pushed to remote")
+  })
+
+  it("does not show unpushed line when branch is up to date", () => {
+    const output = formatContext(
+      makeContext({
+        git: {
+          branch: "main",
+          uncommitted: { count: 0, files: [], additions: 0, deletions: 0 },
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [],
+          recentCommits: [],
+          churn: [],
+          todos: [],
+        },
+      }),
+    )
+    expect(output).not.toContain("ahead of origin")
+    expect(output).not.toContain("never been pushed")
+  })
+
+  it("shows stale local branches", () => {
+    const output = formatContext(
+      makeContext({
+        git: {
+          branch: "main",
+          uncommitted: { count: 0, files: [], additions: 0, deletions: 0 },
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [
+            { name: "feat/old-feature", ageDays: 21 },
+            { name: "fix/forgotten", ageDays: 14 },
+          ],
+          recentCommits: [],
+          churn: [],
+          todos: [],
+        },
+      }),
+    )
+    expect(output).toContain("feat/old-feature")
+    expect(output).toContain("21 days old")
+    expect(output).toContain("fix/forgotten")
   })
 })
 
@@ -281,6 +365,12 @@ describe("formatContext — instructions section", () => {
     expect(output).toContain("Instructions for Cursor")
   })
 
+  it("ends with the reply prompt", () => {
+    const output = formatContext(makeContext())
+    expect(output).toContain("Just reply with")
+    expect(output).toContain("I'll get started")
+  })
+
   it("shows no-git hint when hasGit is false", () => {
     const output = formatContext(
       makeContext({ scan: { ...makeContext().scan, hasGit: false } }),
@@ -391,21 +481,37 @@ describe("formatContext — instructions section", () => {
     expect(output).toContain("established project")
   })
 
-  it("includes Linear step 1 instructions", () => {
+  it("always includes the Linear step", () => {
     const output = formatContext(makeContext())
-    expect(output).toContain("list_cycles")
     expect(output).toContain("list_issues")
     expect(output).toContain("get_user")
   })
 
-  it("tells Cursor to skip Linear silently when not connected", () => {
-    const output = formatContext(makeContext())
-    expect(output).toContain("skip this step silently")
+  it("includes branch name in Linear relevance context", () => {
+    const output = formatContext(
+      makeContext({
+        git: {
+          branch: "feat/payment-flow",
+          uncommitted: { count: 0, files: [], additions: 0, deletions: 0 },
+          recentCommits: [],
+          churn: [],
+          todos: [],
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [],
+        },
+      }),
+    )
+    expect(output).toContain("feat/payment-flow")
   })
 
-  it("instructs Cursor to cross-reference sprint issues with branch and commits", () => {
+  it("instructs Cursor to skip Linear silently if nothing matches the current context", () => {
     const output = formatContext(makeContext())
-    expect(output).toContain("branch name and recent commit messages")
+    expect(output).toContain("skip Linear completely and do not mention it")
+  })
+
+  it("instructs Cursor to skip Linear silently if not connected", () => {
+    const output = formatContext(makeContext())
+    expect(output).toContain("skip this step silently")
   })
 
   it("ranks active sprint issues above assigned GitHub issues", () => {
@@ -415,5 +521,56 @@ describe("formatContext — instructions section", () => {
     expect(sprintRuleIndex).toBeGreaterThan(-1)
     expect(githubIssueRuleIndex).toBeGreaterThan(-1)
     expect(sprintRuleIndex).toBeLessThan(githubIssueRuleIndex)
+  })
+
+  it("shows unpushed hint when branch has commits ahead of remote", () => {
+    const output = formatContext(
+      makeContext({
+        git: {
+          branch: "main",
+          uncommitted: { count: 0, files: [], additions: 0, deletions: 0 },
+          unpushed: { count: 3, hasRemote: true },
+          staleBranches: [],
+          recentCommits: [],
+          churn: [],
+          todos: [],
+        },
+      }),
+    )
+    expect(output).toContain("commits not yet pushed to remote")
+  })
+
+  it("shows unpushed hint when branch has never been pushed", () => {
+    const output = formatContext(
+      makeContext({
+        git: {
+          branch: "feat/thing",
+          uncommitted: { count: 0, files: [], additions: 0, deletions: 0 },
+          unpushed: { count: 0, hasRemote: false },
+          staleBranches: [],
+          recentCommits: [],
+          churn: [],
+          todos: [],
+        },
+      }),
+    )
+    expect(output).toContain("commits not yet pushed to remote")
+  })
+
+  it("shows stale branches hint when stale branches exist", () => {
+    const output = formatContext(
+      makeContext({
+        git: {
+          branch: "main",
+          uncommitted: { count: 0, files: [], additions: 0, deletions: 0 },
+          unpushed: { count: 0, hasRemote: true },
+          staleBranches: [{ name: "feat/forgotten", ageDays: 30 }],
+          recentCommits: [],
+          churn: [],
+          todos: [],
+        },
+      }),
+    )
+    expect(output).toContain("local branches that were never pushed")
   })
 })

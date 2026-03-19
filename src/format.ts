@@ -77,6 +77,21 @@ function formatGitSection(ctx: NextMoveContext): string {
     lines.push(`**Uncommitted changes:** none — working tree clean`)
   }
 
+  if (!git.unpushed.hasRemote) {
+    lines.push(`**Unpushed commits:** branch has never been pushed to remote`)
+  } else if (git.unpushed.count > 0) {
+    lines.push(
+      `**Unpushed commits:** ${git.unpushed.count} commit${git.unpushed.count === 1 ? "" : "s"} ahead of origin — no PR open yet`,
+    )
+  }
+
+  if (git.staleBranches.length > 0) {
+    lines.push(`\n**Stale local branches (never pushed):**`)
+    for (const b of git.staleBranches) {
+      lines.push(`  - \`${b.name}\` — ${b.ageDays} days old`)
+    }
+  }
+
   if (git.churn.length > 0) {
     lines.push(`\n**Hottest files (last 30 days):**`)
     for (const entry of git.churn.slice(0, 8)) {
@@ -190,6 +205,9 @@ function formatInstructions(ctx: NextMoveContext): string {
   const recentReleaseDays = ctx.github?.recentRelease?.ageDays ?? null
   const isPostRelease = recentReleaseDays !== null && recentReleaseDays <= 14
   const isNewProject = ctx.scan.missing.length >= 3
+  const hasUnpushedWork =
+    ctx.git && (!ctx.git.unpushed.hasRemote || ctx.git.unpushed.count > 0)
+  const hasStaleBranches = (ctx.git?.staleBranches.length ?? 0) > 0
 
   const hints: string[] = []
 
@@ -218,39 +236,51 @@ function formatInstructions(ctx: NextMoveContext): string {
       "You have uncommitted work and open PRs — consider shipping what's in progress before starting something new.",
     )
   }
+  if (hasUnpushedWork) {
+    hints.push(
+      "You have commits not yet pushed to remote — opening a PR is a high-value next step.",
+    )
+  }
+  if (hasStaleBranches) {
+    hints.push(
+      "You have local branches that were never pushed — decide whether to ship or clean them up.",
+    )
+  }
+
+  const branchAndCommits = [
+    ctx.git?.branch,
+    ...(ctx.git?.recentCommits.slice(0, 5).map((c) => c.message) ?? []),
+  ]
+    .filter(Boolean)
+    .join(", ")
+
+  const linearStep = [
+    `### Step 1 — Check Linear for active work (if connected)`,
+    `If the \`linear\` MCP server is available, call these tools **now, before suggesting tasks**:`,
+    ``,
+    `1. \`get_user\` — resolve your Linear identity`,
+    `2. \`list_issues\` — filter by: assignee = you, state = "In Progress"`,
+    ``,
+    `Current branch and recent commits for context: \`${branchAndCommits || "unknown"}\``,
+    ``,
+    `**Only surface Linear issues if at least one in-progress issue title clearly relates to the current branch name or recent commit messages above.** The branch name is the strongest signal — a branch called \`feat/payment-flow\` matches a Linear issue titled "Payment flow". If nothing overlaps with the current codebase context, skip Linear completely and do not mention it.`,
+    ``,
+    `If Linear is not connected, skip this step silently.`,
+  ]
 
   const lines = [
     `## Instructions for Cursor`,
-    `You are a staff engineer helping a developer decide what to work on next.`,
+    `You are acting as a senior engineer and co-pilot helping the developer decide what to work on next.`,
     ``,
-    `### Step 1 — Enrich with Linear (if connected)`,
-    `Check if the \`linear\` MCP server is available. If it is, call these tools **now, before suggesting tasks**:`,
-    ``,
-    `1. \`get_user\` — resolve your Linear identity`,
-    `2. \`list_cycles\` — find active sprint cycles across your teams`,
-    `3. \`list_issues\` — filter by: assignee = you, cycle = active, state ≠ done`,
-    ``,
-    `Then produce a one-line sprint summary:`,
-    `> **Linear sprint:** X issues total · Y in progress · Z not started`,
-    ``,
-    `Cross-reference sprint issues with the git branch name and recent commit messages. If a sprint issue clearly maps to what's already in progress, flag it explicitly.`,
-    ``,
-    `If Linear is not connected, skip this step silently — do not mention it.`,
+    ...linearStep,
     ``,
     `### Step 2 — Suggest tasks`,
-    `Based on all signals (git, GitHub, Linear sprint if available), suggest **2-3 agent tasks** ranked by impact.`,
+    `Based on all signals above (git, GitHub, and Linear if relevant), present **2-3 numbered options** ranked by impact.`,
     ``,
-    `**Each task must use this exact format:**`,
+    `**Format each option like this:**`,
     ``,
-    `**Task N: [Short title]** · Effort: [XS / S / M / L]`,
-    `> Why now: [One sentence referencing a specific signal from the context above]`,
-    `>`,
-    `> Agent prompt:`,
-    `> [A complete, paste-ready prompt for Cursor agent. Must include:]`,
-    `> - Goal: what to build or fix`,
-    `> - Scope: which files to touch`,
-    `> - Constraints: what NOT to change (public APIs, unrelated files, etc.)`,
-    `> - Done when: one specific, verifiable acceptance criterion`,
+    `**1. [Short title]** · [XS / S / M / L]`,
+    `[One sentence explaining why this is the right move now, citing a specific signal.]`,
     ``,
     `**Ranking rules (apply in order):**`,
     `1. Unblock teammates — pending review requests first`,
@@ -263,7 +293,8 @@ function formatInstructions(ctx: NextMoveContext): string {
       ? `This project has multiple missing setup signals — prioritize foundational tasks (git, CI, tests) before features.`
       : `This is an established project — prefer small, high-leverage changes over large rewrites.`,
     ``,
-    `Keep each agent prompt under 80 words. Specific beats comprehensive.`,
+    `After the list, end with exactly this line:`,
+    `> Just reply with **1**, **2**, or **3** and I'll get started.`,
   ]
 
   if (hints.length > 0) {
