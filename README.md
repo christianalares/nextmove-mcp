@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Next Move" width="140" />
+  <img src="logo.png" alt="Next Move" width="200" />
 </p>
 
 # nextmove-mcp
