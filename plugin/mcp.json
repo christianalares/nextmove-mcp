@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "nextmove": {
+      "command": "npx",
+      "args": ["-y", "nextmove-mcp"]
+    }
+  }
+}

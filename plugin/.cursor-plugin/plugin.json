@@ -1,0 +1,32 @@
+{
+  "name": "nextmove",
+  "displayName": "Next Move",
+  "version": "0.1.2",
+  "description": "Analyzes your local git repo, GitHub signals, and Linear sprint to surface what to work on next — presented as numbered options you can act on immediately by replying with a number.",
+  "author": {
+    "name": "Christian Alares",
+    "email": "christian@alares.se"
+  },
+  "homepage": "https://github.com/christianalares/nextmove-mcp",
+  "repository": "https://github.com/christianalares/nextmove-mcp",
+  "license": "MIT",
+  "keywords": [
+    "nextmove",
+    "productivity",
+    "github",
+    "linear",
+    "git",
+    "agent-tasks",
+    "developer-tools"
+  ],
+  "category": "developer-tools",
+  "tags": [
+    "productivity",
+    "planning",
+    "github",
+    "linear",
+    "agentic"
+  ],
+  "skills": "./skills/",
+  "mcp": "./mcp.json"
+}
